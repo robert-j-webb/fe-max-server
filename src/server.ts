@@ -10,8 +10,9 @@ import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
+import pretty from "pino-pretty";
 
-const logger = pino({ name: "server start" });
+const logger = pino(pretty());
 const app: Express = express();
 
 // Set the application to trust the reverse proxy
