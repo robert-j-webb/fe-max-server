@@ -11,6 +11,7 @@ import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
 import pretty from "pino-pretty";
+import { maxRouter } from "./api/max/maxRouter";
 
 const logger = pino(pretty());
 const app: Express = express();
@@ -30,6 +31,7 @@ app.use(requestLogger);
 
 // Routes
 app.use("/health-check", healthCheckRouter);
+app.use("/max", maxRouter);
 app.use("/users", userRouter);
 
 // Swagger UI
