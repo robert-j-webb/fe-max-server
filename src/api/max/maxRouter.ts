@@ -54,11 +54,13 @@ maxRouter.post(
   "/serve",
   validateRequest(z.object({ body: getMaxServeSchema })),
   async (_req: Request, res: Response) => {
-    maxServeService.start(_req.body.modelName, {
+    await maxServeService.start(_req.body.modelName, {
       weightsPath: _req.body.weightsPath,
       trustRemoteCodeFlag: Boolean(_req.body.trustRemoteCodeFlag),
     });
-    res.status(200).send({ message: "Max serve started" });
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const status = maxServeService.getStatus();
+    res.status(status.error ? 500 : 200).send(status);
   }
 );
 

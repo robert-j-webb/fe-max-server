@@ -1,5 +1,4 @@
 import { execa, Options, ResultPromise } from "execa";
-import { createInterface } from "readline";
 import { EventEmitter } from "events";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -13,10 +12,11 @@ class MaxServeService extends EventEmitter {
     localDir: string;
     all: true;
   }> | null = null;
-  private maxPath = "$HOME/.modular/bin/";
+  private maxPath = isDev ? "$HOME/.modular/bin/" : `$HOME/.venv/bin/`;
   private error: string | null = null;
   private stdout: string[] = [];
   private isServerReady = false;
+  private maxVersion: string | null = null;
 
   async start(
     modelName: string,
@@ -41,7 +41,17 @@ class MaxServeService extends EventEmitter {
       }
     }
 
-    let command = `max serve --model-path ${modelName}`;
+    const maxVersion = await execa({
+      shell: "bash",
+    })`${this.maxPath}max --version`;
+    if (maxVersion.exitCode !== 0) {
+      this.error = "Max not found!";
+      return;
+    } else {
+      this.maxVersion = maxVersion.stdout;
+    }
+
+    let command = `${this.maxPath}max serve --model-path ${modelName}`;
 
     if (weightsPath) {
       command += ` --weight-path ${weightsPath}`;
@@ -55,7 +65,6 @@ class MaxServeService extends EventEmitter {
       shell: "bash",
       cleanup: false,
       forceKillAfterDelay: false,
-      localDir: this.maxPath,
       all: true,
     })`${command}`;
     this.isRunning = true;
@@ -64,10 +73,10 @@ class MaxServeService extends EventEmitter {
 
   private async monitorProcess() {
     for await (const line of this.process!.iterable({ from: "all" })) {
-      if (!isDev && line.includes("No GPUs available, falling back to CPU")) {
-        this.error = "No GPUs found!";
-        this.process?.kill();
-      }
+      // if (!isDev && line.includes("No GPUs available, falling back to CPU")) {
+      //   this.error = "No GPUs found!";
+      //   this.process?.kill();
+      // }
       if (line.includes("Server ready on http://0.0.0.0:8000 ")) {
         this.isServerReady = true;
       }
@@ -84,6 +93,7 @@ class MaxServeService extends EventEmitter {
       error: this.error,
       isServerReady: this.isServerReady,
       isRunning: this.isRunning,
+      maxVersion: this.maxVersion,
     };
   }
 }
