@@ -12,7 +12,7 @@ class MaxServeService extends EventEmitter {
     localDir: string;
     all: true;
   }> | null = null;
-  private maxPath = isDev ? "$HOME/.modular/bin/" : `$HOME/.venv/bin/`;
+  private maxPath = isDev ? "$HOME/.modular/bin/" : `/root/.venv/bin/`;
   private error: string | null = null;
   private stdout: string[] = [];
   private isServerReady = false;
