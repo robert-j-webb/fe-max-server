@@ -4,7 +4,7 @@ import { EventEmitter } from "events";
 const isDev = process.env.NODE_ENV === "development";
 
 class MaxServeService extends EventEmitter {
-  private isRunning = false;
+  private hasMaxStarted = false;
   private process: ResultPromise<{
     shell: string;
     cleanup: false;
@@ -17,7 +17,8 @@ class MaxServeService extends EventEmitter {
   private stdout: string[] = [];
   private isServerReady = false;
   private maxVersion: string | null = null;
-
+  private hasModelDownloadStarted = false;
+  private hasModelCompilingStarted = false;
   async start(
     modelName: string,
     {
@@ -28,7 +29,9 @@ class MaxServeService extends EventEmitter {
     this.error = null;
     this.stdout = [];
     this.isServerReady = false;
-    this.isRunning = false;
+    this.hasMaxStarted = false;
+    this.hasModelDownloadStarted = false;
+    this.hasModelCompilingStarted = false;
     if (this.process) {
       this.process.kill();
     } else {
@@ -67,7 +70,7 @@ class MaxServeService extends EventEmitter {
       forceKillAfterDelay: false,
       all: true,
     })`${command}`;
-    this.isRunning = true;
+    this.hasMaxStarted = true;
     this.monitorProcess();
   }
 
@@ -77,8 +80,14 @@ class MaxServeService extends EventEmitter {
       //   this.error = "No GPUs found!";
       //   this.process?.kill();
       // }
-      if (line.includes("Server ready on http://0.0.0.0:8000 ")) {
+      if (line.includes("ready on http://0.0.0.0:8000 ")) {
         this.isServerReady = true;
+      }
+      if (line.includes("Starting download of model")) {
+        this.hasModelDownloadStarted = true;
+      }
+      if (line.includes("Building and compiling model")) {
+        this.hasModelCompilingStarted = true;
       }
       this.stdout.push(line);
     }
@@ -92,8 +101,10 @@ class MaxServeService extends EventEmitter {
     return {
       error: this.error,
       isServerReady: this.isServerReady,
-      isRunning: this.isRunning,
+      hasMaxStarted: this.hasMaxStarted,
       maxVersion: this.maxVersion,
+      hasModelDownloadStarted: this.hasModelDownloadStarted,
+      hasModelCompilingStarted: this.hasModelCompilingStarted,
     };
   }
 }
