@@ -142,7 +142,7 @@ class MaxServeService {
     if (!this.hasUserUsedServer || !this.vultrInstanceId) {
       return;
     }
-    fetch(`${this.phoenixServer}/vultr/heartbeat`, {
+    fetch(`${this.phoenixServer}/v1/heartbeat`, {
       method: "POST",
       body: JSON.stringify({
         instanceId: this.vultrInstanceId,
