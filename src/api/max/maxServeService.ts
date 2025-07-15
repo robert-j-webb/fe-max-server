@@ -142,11 +142,8 @@ class MaxServeService {
     if (!this.hasUserUsedServer || !this.vultrInstanceId) {
       return;
     }
-    fetch(`${this.phoenixServer}/v1/heartbeat`, {
-      method: "POST",
-      body: JSON.stringify({
-        instanceId: this.vultrInstanceId,
-      }),
+    fetch(`${this.phoenixServer}/v1/heartbeat/${this.vultrInstanceId}`, {
+      method: "GET",
     });
   }
 }
