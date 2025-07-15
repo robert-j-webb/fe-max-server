@@ -19,6 +19,7 @@ maxRegistry.registerPath({
 });
 
 maxRouter.get("/version", async (_req: Request, res: Response) => {
+  maxServeService.triggerHeartBeat();
   const response = await execa`max --version`;
   const isMaxFound = response.exitCode === 0;
   res.status(isMaxFound ? 200 : 404).send(response.stdout);
@@ -57,6 +58,7 @@ maxRouter.post(
     await maxServeService.start(_req.body.modelName, {
       weightsPath: _req.body.weightsPath,
       trustRemoteCodeFlag: Boolean(_req.body.trustRemoteCodeFlag),
+      phoenixServer: _req.body.phoenixServer,
     });
     await new Promise((resolve) => setTimeout(resolve, 500));
     const status = maxServeService.getStatus();
@@ -72,6 +74,7 @@ maxRegistry.registerPath({
 });
 
 maxRouter.get("/stdout", async (_req: Request, res: Response) => {
+  maxServeService.triggerHeartBeat();
   res.status(200).send(maxServeService.getStdout());
 });
 
@@ -83,5 +86,6 @@ maxRegistry.registerPath({
 });
 
 maxRouter.get("/status", async (_req: Request, res: Response) => {
+  maxServeService.triggerHeartBeat();
   res.status(200).send(maxServeService.getStatus());
 });

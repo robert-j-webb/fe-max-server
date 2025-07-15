@@ -146,6 +146,10 @@ class MaxServeService {
       method: "GET",
     });
   }
+
+  public triggerHeartBeat() {
+    this.hasUserUsedServer = true;
+  }
 }
 
 export const maxServeService = new MaxServeService();

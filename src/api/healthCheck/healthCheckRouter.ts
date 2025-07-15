@@ -4,18 +4,20 @@ import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import { maxServeService } from "../max/maxServeService";
 
 export const healthCheckRegistry = new OpenAPIRegistry();
 export const healthCheckRouter: Router = express.Router();
 
 healthCheckRegistry.registerPath({
-	method: "get",
-	path: "/health-check",
-	tags: ["Health Check"],
-	responses: createApiResponse(z.null(), "Success"),
+  method: "get",
+  path: "/health-check",
+  tags: ["Health Check"],
+  responses: createApiResponse(z.null(), "Success"),
 });
 
 healthCheckRouter.get("/", (_req: Request, res: Response) => {
-	const serviceResponse = ServiceResponse.success("Service is healthy", null);
-	res.status(serviceResponse.statusCode).send(serviceResponse);
+  maxServeService.triggerHeartBeat();
+  const serviceResponse = ServiceResponse.success("Service is healthy", null);
+  res.status(serviceResponse.statusCode).send(serviceResponse);
 });
