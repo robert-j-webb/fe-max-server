@@ -3,7 +3,7 @@ import { EventEmitter } from "events";
 
 const isDev = process.env.NODE_ENV === "development";
 
-class MaxServeService extends EventEmitter {
+class MaxServeService {
   private hasMaxStarted = false;
   private process: ResultPromise<{
     shell: string;
@@ -19,12 +19,28 @@ class MaxServeService extends EventEmitter {
   private maxVersion: string | null = null;
   private hasModelDownloadStarted = false;
   private hasModelCompilingStarted = false;
+  private hasUserUsedServer = false;
+  private phoenixServer: string | null = null;
+  private heartBeatInterval: NodeJS.Timeout | null = null;
+  private vultrInstanceId: string | null = null;
+
+  constructor() {
+    fetch("127.0.0.1/v1.json")
+      .then((res) => res.json())
+      .then((body) => (this.vultrInstanceId = body["instance-v2-id"]));
+  }
+
   async start(
     modelName: string,
     {
       weightsPath,
       trustRemoteCodeFlag,
-    }: { weightsPath?: string; trustRemoteCodeFlag?: boolean }
+      phoenixServer,
+    }: {
+      weightsPath?: string;
+      trustRemoteCodeFlag?: boolean;
+      phoenixServer: string;
+    }
   ) {
     this.error = null;
     this.stdout = [];
@@ -32,6 +48,16 @@ class MaxServeService extends EventEmitter {
     this.hasMaxStarted = false;
     this.hasModelDownloadStarted = false;
     this.hasModelCompilingStarted = false;
+    this.hasUserUsedServer = true;
+    this.phoenixServer = phoenixServer;
+    if (this.heartBeatInterval) {
+      clearInterval(this.heartBeatInterval);
+    }
+
+    this.heartBeatInterval = setInterval(() => {
+      this.heartBeat();
+    }, 1000 * 60 * 5);
+
     if (this.process) {
       this.process.kill();
     } else {
@@ -89,6 +115,9 @@ class MaxServeService extends EventEmitter {
       if (line.includes("Building and compiling model")) {
         this.hasModelCompilingStarted = true;
       }
+      if (line.includes("POST /v1/chat/completions HTTP/1.1")) {
+        this.hasUserUsedServer = true;
+      }
       this.stdout.push(line);
     }
   }
@@ -105,7 +134,20 @@ class MaxServeService extends EventEmitter {
       maxVersion: this.maxVersion,
       hasModelDownloadStarted: this.hasModelDownloadStarted,
       hasModelCompilingStarted: this.hasModelCompilingStarted,
+      vultrInstanceId: this.vultrInstanceId,
     };
+  }
+
+  public heartBeat() {
+    if (!this.hasUserUsedServer || !this.vultrInstanceId) {
+      return;
+    }
+    fetch(`${this.phoenixServer}/vultr/heartbeat`, {
+      method: "POST",
+      body: JSON.stringify({
+        instanceId: this.vultrInstanceId,
+      }),
+    });
   }
 }
 
