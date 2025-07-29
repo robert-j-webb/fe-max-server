@@ -27,7 +27,8 @@ class MaxServeService {
   constructor() {
     fetch("127.0.0.1/v1.json")
       .then((res) => res.json())
-      .then((body) => (this.vultrInstanceId = body["instance-v2-id"]));
+      .then((body) => (this.vultrInstanceId = body["instance-v2-id"]))
+      .catch((e) => console.log("Error getting vultr instance id"));
   }
 
   async start(
