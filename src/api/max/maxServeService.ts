@@ -151,6 +151,24 @@ class MaxServeService {
   public triggerHeartBeat() {
     this.hasUserUsedServer = true;
   }
+
+  public async killServer() {
+    if (this.process) {
+      this.process.kill();
+    } else {
+      try {
+        const response = await execa`lsof -i :8000`;
+        const pid = response.stdout.split("\n")[1].split(" ")[1];
+        await execa`kill -9 ${pid}`;
+      } catch (e) {
+        console.log("Tried to kill process", e);
+      }
+    }
+    if (this.heartBeatInterval) {
+      clearInterval(this.heartBeatInterval);
+      this.heartBeatInterval = null;
+    }
+  }
 }
 
 export const maxServeService = new MaxServeService();

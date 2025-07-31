@@ -7,6 +7,8 @@ import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { maxServeService } from "./maxServeService";
+import { rm } from "node:fs/promises";
+import { error } from "node:console";
 
 export const maxRegistry = new OpenAPIRegistry();
 export const maxRouter: Router = express.Router();
@@ -88,4 +90,24 @@ maxRegistry.registerPath({
 maxRouter.get("/status", async (_req: Request, res: Response) => {
   maxServeService.triggerHeartBeat();
   res.status(200).send(maxServeService.getStatus());
+});
+
+maxRegistry.registerPath({
+  method: "post",
+  path: "/max/kill",
+  tags: ["MAX"],
+  responses: createApiResponse(z.null(), "Success"),
+});
+
+maxRouter.post("/kill", async (_req: Request, res: Response) => {
+  await rm("/tmp/max-secret");
+  try {
+    await maxServeService.killServer();
+    res.status(200).send({ message: "Server killed, secret forgotten." });
+  } catch (e) {
+    res.status(500).send({
+      message: "Secret Forgotten. Failed to kill server.",
+      error: e,
+    });
+  }
 });
