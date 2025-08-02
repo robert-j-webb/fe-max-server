@@ -6,7 +6,13 @@ export async function secretChecker(
   res: Response,
   next: NextFunction
 ) {
-  const maxSecret = await readFile("/tmp/max-secret", "utf-8");
+  let maxSecret: string;
+  try {
+    maxSecret = await readFile("/tmp/max-secret", "utf-8");
+  } catch (e) {
+    res.status(500).json({ error: "No Secret Found" });
+    throw new Error("No Secret Found");
+  }
   if (
     (req.headers["max-secret"] as string | undefined)?.trim() !==
     maxSecret.trim()
