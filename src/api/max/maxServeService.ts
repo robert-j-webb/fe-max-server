@@ -1,7 +1,4 @@
-import { execa, Options, ResultPromise } from "execa";
-import { EventEmitter } from "events";
-
-const isDev = process.env.NODE_ENV === "development";
+import { execa, ResultPromise } from "execa";
 
 class MaxServeService {
   private hasMaxStarted = false;
@@ -12,7 +9,6 @@ class MaxServeService {
     localDir: string;
     all: true;
   }> | null = null;
-  private maxPath = isDev ? "$HOME/.modular/bin/" : `/root/.venv/bin/`;
   private error: string | null = null;
   private stdout: string[] = [];
   private isServerReady = false;
@@ -73,7 +69,7 @@ class MaxServeService {
 
     const maxVersion = await execa({
       shell: "bash",
-    })`${this.maxPath}max --version`;
+    })`max --version`;
     if (maxVersion.exitCode !== 0) {
       this.error = "Max not found!";
       return;
@@ -81,7 +77,7 @@ class MaxServeService {
       this.maxVersion = maxVersion.stdout;
     }
 
-    let command = `${this.maxPath}max serve --model-path ${modelName}`;
+    let command = `max serve --model-path ${modelName}`;
 
     if (weightsPath) {
       command += ` --weight-path ${weightsPath}`;
