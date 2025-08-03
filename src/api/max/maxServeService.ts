@@ -1,4 +1,5 @@
 import { execa, ResultPromise } from "execa";
+import { readFileSync } from "node:fs";
 
 class MaxServeService {
   private hasMaxStarted = false;
@@ -18,13 +19,14 @@ class MaxServeService {
   private hasUserUsedServer = false;
   private phoenixServer: string | null = null;
   private heartBeatInterval: NodeJS.Timeout | null = null;
-  private vultrInstanceId: string | null = null;
+  private ipAddress: string | null = null;
 
   constructor() {
-    fetch("127.0.0.1/v1.json")
-      .then((res) => res.json())
-      .then((body) => (this.vultrInstanceId = body["instance-v2-id"]))
-      .catch((e) => console.log("Error getting vultr instance id"));
+    try {
+      this.ipAddress = readFileSync("/tmp/ipAddress", "utf-8");
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async start(
@@ -131,15 +133,14 @@ class MaxServeService {
       maxVersion: this.maxVersion,
       hasModelDownloadStarted: this.hasModelDownloadStarted,
       hasModelCompilingStarted: this.hasModelCompilingStarted,
-      vultrInstanceId: this.vultrInstanceId,
     };
   }
 
   public heartBeat() {
-    if (!this.hasUserUsedServer || !this.vultrInstanceId) {
+    if (!this.hasUserUsedServer) {
       return;
     }
-    fetch(`${this.phoenixServer}/v1/heartbeat/${this.vultrInstanceId}`, {
+    fetch(`${this.phoenixServer}/v1/heartbeat/${this.ipAddress}`, {
       method: "GET",
     });
   }
@@ -149,6 +150,12 @@ class MaxServeService {
   }
 
   public async killServer() {
+    this.error = null;
+    this.stdout = [];
+    this.isServerReady = false;
+    this.hasMaxStarted = false;
+    this.hasModelDownloadStarted = false;
+    this.hasModelCompilingStarted = false;
     if (this.process) {
       this.process.kill();
     } else {
