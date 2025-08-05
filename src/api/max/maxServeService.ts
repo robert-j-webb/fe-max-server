@@ -1,6 +1,9 @@
 import { execa, ResultPromise } from "execa";
 import { readFileSync } from "node:fs";
-import find, { ProcessInfo, FindConfig } from "find-process";
+import findProcess from "find-process";
+
+// CommonJS Module nonsense :)
+const find = (findProcess as any).default as typeof findProcess;
 
 class MaxServeService {
   private hasMaxStarted = false;
