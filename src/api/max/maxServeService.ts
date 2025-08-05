@@ -1,5 +1,6 @@
 import { execa, ResultPromise } from "execa";
 import { readFileSync } from "node:fs";
+import find, { ProcessInfo, FindConfig } from "find-process";
 
 class MaxServeService {
   private hasMaxStarted = false;
@@ -59,15 +60,8 @@ class MaxServeService {
 
     if (this.process) {
       this.process.kill();
-    } else {
-      try {
-        const response = await execa`lsof -i :8000`;
-        const pid = response.stdout.split("\n")[1].split(" ")[1];
-        await execa`kill -9 ${pid}`;
-      } catch (e) {
-        console.log("Tried to kill process", e);
-      }
     }
+    await this.killByPort();
 
     const maxVersion = await execa({
       shell: "bash",
@@ -117,7 +111,20 @@ class MaxServeService {
       if (line.includes("POST /v1/chat/completions HTTP/1.1")) {
         this.hasUserUsedServer = true;
       }
+      if (line.includes("Value error, port 8000 is already in use")) {
+        this.error = "Port 8000 is already in use! Attempting to kill!";
+        this.killByPort();
+      }
       this.stdout.push(line);
+    }
+  }
+
+  private async killByPort() {
+    const list = await find("port", 8000);
+    if (list.length > 0) {
+      await execa`kill -9 ${list[0].pid}`;
+    } else {
+      console.log("Could not find process running on port 8000");
     }
   }
 
