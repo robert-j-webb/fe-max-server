@@ -170,9 +170,7 @@ class MaxServeService {
       this.process.kill();
     } else {
       try {
-        const response = await execa`lsof -i :8000`;
-        const pid = response.stdout.split("\n")[1].split(" ")[1];
-        await execa`kill -9 ${pid}`;
+        await this.killByPort();
       } catch (e) {
         console.log("Tried to kill process", e);
       }
