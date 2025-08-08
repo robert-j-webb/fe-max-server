@@ -77,6 +77,8 @@ class MaxServeService {
       command += " --trust-remote-code";
     }
 
+    command += " --max-length 65000"
+
     this.process = execa({
       shell: "bash",
       cleanup: false,
