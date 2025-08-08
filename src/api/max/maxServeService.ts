@@ -7,13 +7,7 @@ const find = (findProcess as any).default as typeof findProcess;
 
 class MaxServeService {
   private hasMaxStarted = false;
-  private process: ResultPromise<{
-    shell: string;
-    cleanup: false;
-    forceKillAfterDelay: false;
-    localDir: string;
-    all: true;
-  }> | null = null;
+  private process: ReturnType<typeof execa> | null = null;
   private error: string | null = null;
   private stdout: string[] = [];
   private isServerReady = false;
@@ -61,9 +55,6 @@ class MaxServeService {
       this.heartBeat();
     }, 1000 * 60 * 5);
 
-    if (this.process) {
-      this.process.kill();
-    }
     await this.killByPort();
 
     const maxVersion = await execa({
@@ -97,11 +88,11 @@ class MaxServeService {
   }
 
   private async monitorProcess() {
-    for await (const line of this.process!.iterable({ from: "all" })) {
-      // if (!isDev && line.includes("No GPUs available, falling back to CPU")) {
-      //   this.error = "No GPUs found!";
-      //   this.process?.kill();
-      // }
+    const processLines = this.process!.iterable({
+      binary: false,
+      from: "all",
+    }) as AsyncIterable<string>;
+    for await (const line of processLines) {
       if (line.includes("ready on http://0.0.0.0:8000 ")) {
         this.isServerReady = true;
       }
@@ -122,10 +113,17 @@ class MaxServeService {
     }
   }
 
-  private async killByPort() {
+  private async killByPort(killCount = 0) {
+    if (killCount > 6) {
+      throw new Error("Could not kill process running on port 8000");
+    }
     const list = await find("port", 8000);
     if (list.length > 0) {
       await execa`kill -9 ${list[0].pid}`;
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Try to kill 5 times before giving up
+      this.killByPort(killCount + 1);
     } else {
       console.log("Could not find process running on port 8000");
     }
@@ -135,7 +133,7 @@ class MaxServeService {
     return this.stdout;
   }
 
-  public getStatus() {
+  public async getStatus() {
     return {
       error: this.error,
       isServerReady: this.isServerReady,
@@ -143,6 +141,7 @@ class MaxServeService {
       maxVersion: this.maxVersion,
       hasModelDownloadStarted: this.hasModelDownloadStarted,
       hasModelCompilingStarted: this.hasModelCompilingStarted,
+      processByPort: JSON.parse(JSON.stringify(await find("port", 8000))),
     };
   }
 
@@ -166,14 +165,11 @@ class MaxServeService {
     this.hasMaxStarted = false;
     this.hasModelDownloadStarted = false;
     this.hasModelCompilingStarted = false;
-    if (this.process) {
-      this.process.kill();
-    } else {
-      try {
-        await this.killByPort();
-      } catch (e) {
-        console.log("Tried to kill process", e);
-      }
+
+    try {
+      await this.killByPort();
+    } catch (e) {
+      console.log("Tried to kill process", e);
     }
     if (this.heartBeatInterval) {
       clearInterval(this.heartBeatInterval);

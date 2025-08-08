@@ -63,7 +63,7 @@ maxRouter.post(
       phoenixServer: _req.body.phoenixServer,
     });
     await new Promise((resolve) => setTimeout(resolve, 500));
-    const status = maxServeService.getStatus();
+    const status = await maxServeService.getStatus();
     res.status(status.error ? 500 : 200).send(status);
   }
 );
@@ -89,7 +89,7 @@ maxRegistry.registerPath({
 
 maxRouter.get("/status", async (_req: Request, res: Response) => {
   maxServeService.triggerHeartBeat();
-  res.status(200).send(maxServeService.getStatus());
+  res.status(200).send(await maxServeService.getStatus());
 });
 
 maxRegistry.registerPath({
