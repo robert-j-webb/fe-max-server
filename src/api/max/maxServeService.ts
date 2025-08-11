@@ -116,6 +116,10 @@ class MaxServeService {
         this.error = "Port 8000 is already in use! Attempting to kill!";
         this.killByPort();
       }
+      if (line.includes("Model worker process is not healthy")) {
+        this.error = "Model worker process is not healthy";
+        this.killByPort();
+      }
       this.stdout.push(line);
     }
   }
