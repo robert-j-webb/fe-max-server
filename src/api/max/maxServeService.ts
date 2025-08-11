@@ -5,6 +5,7 @@ import findProcess from "find-process";
 // CommonJS Module nonsense :)
 const find = (findProcess as any).default as typeof findProcess;
 
+const unknownModelRegex = /currently serving '([^']*)'/;
 class MaxServeService {
   private hasMaxStarted = false;
   private process: ReturnType<typeof execa> | null = null;
@@ -104,6 +105,12 @@ class MaxServeService {
       }
       if (line.includes("POST /v1/chat/completions HTTP/1.1")) {
         this.hasUserUsedServer = true;
+      }
+      if (line.match(unknownModelRegex)) {
+        this.error = `Unknown model: ${line.match(unknownModelRegex)?.[1]}`;
+      }
+      if (line.includes("CUDA_ERROR_OUT_OF_MEMORY")) {
+        this.error = "CUDA_ERROR_OUT_OF_MEMORY";
       }
       if (line.includes("Value error, port 8000 is already in use")) {
         this.error = "Port 8000 is already in use! Attempting to kill!";
