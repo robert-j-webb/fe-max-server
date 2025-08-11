@@ -124,16 +124,19 @@ class MaxServeService {
     if (killCount > 6) {
       throw new Error("Could not kill process running on port 8000");
     }
-    const list = await find("port", 8000);
-    if (list.length > 0) {
-      await execa`kill -9 ${list[0].pid}`;
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Try to kill 5 times before giving up
-      this.killByPort(killCount + 1);
-    } else {
-      console.log("Could not find process running on port 8000");
+    try {
+      const list = await find("port", 8000);
+      if (list.length > 0) {
+        await execa`kill -9 ${list[0].pid}`;
+        return;
+      }
+    } catch (e) {
+      console.error(e);
     }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Try to kill 5 times before giving up
+    this.killByPort(killCount + 1);
   }
 
   public getStdout() {
