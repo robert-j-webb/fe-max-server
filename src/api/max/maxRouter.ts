@@ -8,7 +8,7 @@ import { commonValidations } from "@/common/utils/commonValidation";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { maxServeService } from "./maxServeService";
 import { rm } from "node:fs/promises";
-import { error } from "node:console";
+import { NvidiaSMI } from "@quik-fe/node-nvidia-smi";
 
 export const maxRegistry = new OpenAPIRegistry();
 export const maxRouter: Router = express.Router();
@@ -90,6 +90,18 @@ maxRegistry.registerPath({
 maxRouter.get("/status", async (_req: Request, res: Response) => {
   maxServeService.triggerHeartBeat();
   res.status(200).send(await maxServeService.getStatus());
+});
+
+maxRegistry.registerPath({
+  method: "get",
+  path: "/max/gpuStats",
+  tags: ["MAX"],
+  responses: createApiResponse(z.null(), "Success"),
+});
+
+maxRouter.get("/gpuStats", async (_req: Request, res: Response) => {
+  maxServeService.triggerHeartBeat();
+  res.status(200).send(await NvidiaSMI.get_details());
 });
 
 maxRegistry.registerPath({
