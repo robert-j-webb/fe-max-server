@@ -83,6 +83,10 @@ class MaxServeService {
       cleanup: false,
       forceKillAfterDelay: false,
       all: true,
+      env: {
+        MAX_SERVE_LOGS_OTLP_LEVEL: "DEBUG",
+        MAX_SERVE_DEPLOYMENT_ID: `INTERNAL_${modelName}`
+      },
     })`${command}`;
     this.hasMaxStarted = true;
     this.monitorProcess();
