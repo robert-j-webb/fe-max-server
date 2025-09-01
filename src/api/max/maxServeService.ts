@@ -85,7 +85,7 @@ class MaxServeService {
       all: true,
       env: {
         MAX_SERVE_LOGS_OTLP_LEVEL: "DEBUG",
-        MAX_SERVE_DEPLOYMENT_ID: `INTERNAL_${modelName}`
+        MAX_SERVE_DEPLOYMENT_ID: `INTERNAL_MODULAR_CONSOLE`
       },
     })`${command}`;
     this.hasMaxStarted = true;
